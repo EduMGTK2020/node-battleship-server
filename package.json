@@ -6,22 +6,27 @@
     "type": "module",
     "scripts": {
         "start": "node ./index.js",
-        "start:dev": "nodemon ./index.js"
+        "start:dev": "nodemon ./index.js",
+        "start:prod": "npm run build && node build/bundle.js",
+        "build": "webpack"
     },
     "author": "Eduard Nebolsin",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/EduMGTK2020/node-battleship-server.git"
-      },
-      "keywords": [
+    },
+    "keywords": [
         "node",
         "websocket"
-      ],
+    ],
     "license": "ISC",
     "devDependencies": {
         "@types/node": "^20.4.0",
         "nodemon": "^2.0.16",
-        "typescript": "^5.0.4"
+        "ts-loader": "^9.4.4",
+        "typescript": "^5.0.4",
+        "webpack": "^5.88.1",
+        "webpack-cli": "^5.1.4"
     },
     "dependencies": {
         "ws": "^8.8.0"
