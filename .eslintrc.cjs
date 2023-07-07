@@ -13,9 +13,9 @@ module.exports = {
     root: true,
     env: {
       node: true,
-      jest: true,
+      es6: true,
     },
-    ignorePatterns: ['.eslintrc.js'],
+    ignorePatterns: ['.eslintrc.cjs'],
     rules: {
       '@typescript-eslint/interface-name-prefix': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
