@@ -1,5 +1,5 @@
 import { RawData, WebSocket } from 'ws';
-import { Packet } from './types';
+import { Packet, User } from './types';
 import db from './db';
 
 const getRequest = (message: RawData) => {
@@ -60,36 +60,27 @@ const handleCreateRoom = (socket: WebSocket) => {
 const handleAddUserToRoom = (socket: WebSocket, request: Packet) => {
   const reqData = JSON.parse(request.data);
   const room = db.rooms.getRoomById(reqData.indexRoom);
-  console.log('room - ' + reqData.indexRoom);
-  console.log(room);
   const roomUser = room.users[0];
   const user = db.users.getUserByConnection(socket);
+
   if (roomUser.id !== user.id) {
     db.rooms.removeRoomById(room.id);
     updateRoom();
+    const gameId = db.games.createGame(roomUser, user);
 
-    putResponce(
-      user.connection,
-      JSON.stringify({
-        type: 'create_game',
-        data: JSON.stringify({
-          idGame: 1,
-          idPlayer: user.id,
+    [roomUser, user].map((user) => {
+      putResponce(
+        user.connection,
+        JSON.stringify({
+          type: 'create_game',
+          data: JSON.stringify({
+            idGame: gameId,
+            idPlayer: user.id,
+          }),
+          id: 0,
         }),
-        id: 0,
-      }),
-    );
-    putResponce(
-      roomUser.connection,
-      JSON.stringify({
-        type: 'create_game',
-        data: JSON.stringify({
-          idGame: 1,
-          idPlayer: roomUser.id,
-        }),
-        id: 0,
-      }),
-    );
+      );
+    });
   }
 };
 
@@ -138,6 +129,60 @@ const updateWinners = () => {
   });
 };
 
+const finishOnClose = (socket: WebSocket) => {
+  const user = db.users.getUserByConnection(socket);
+  if (user && user.gameId != -1) {
+    const game = db.games.getGameById(user.gameId);
+    game.players.forEach((player) => {
+      if (player !== user) {
+        db.games.finishGame(game.id, player.id, user.id);
+        putResponce(
+          player.connection,
+          JSON.stringify({
+            type: 'finish',
+            data: JSON.stringify({
+              winPlayer: player.id,
+            }),
+            id: 0,
+          }),
+        );
+        updateWinners();
+      }
+    });
+  }
+};
+
+const handleAddShips = (socket: WebSocket, request: Packet) => {
+  const reqData = JSON.parse(request.data);
+  const game = db.games.getGameById(reqData.gameId);
+  game.fields.push('' + reqData.indexPlayer);
+
+  if (game.fields.length == 2) {
+    game.players.map((player) => {
+      putResponce(
+        player.connection,
+        JSON.stringify({
+          type: 'start_game',
+          data: request,
+          id: 0,
+        }),
+      );
+      player.gameId = game.id;
+    });
+
+    putResponce(
+      game.players[0].connection,
+      JSON.stringify({
+        type: 'turn',
+        data: JSON.stringify({
+          currentPlayer: game.players[0].id,
+        }),
+        id: 0,
+      }),
+    );
+  }
+};
+
 const process = (socket: WebSocket, message: RawData) => {
   const request = getRequest(message);
 
@@ -150,8 +195,16 @@ const process = (socket: WebSocket, message: RawData) => {
   if (request.type == 'add_user_to_room') {
     return handleAddUserToRoom(socket, request);
   }
+  if (request.type == 'add_ships') {
+    return handleAddShips(socket, request);
+  }
+};
+
+const close = (socket: WebSocket) => {
+  finishOnClose(socket);
 };
 
 export default {
   process,
+  close,
 };

@@ -14,14 +14,16 @@ const wsServer = new WebSocketServer({ port: 3000 });
 wsServer.on('connection', (socket) => {
   console.log('connection');
   socket.on('message', (message) => {
+    console.log('message');
     handler.process(socket, message);
   });
 
   socket.on('error', (error) => {
-    //console.log(error);
+    console.log('error ' + error);
   });
 
   socket.on('close', () => {
-    console.log('closed');
+    console.log('close');
+    handler.close(socket);
   });
 });

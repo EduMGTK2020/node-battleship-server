@@ -13,10 +13,16 @@ export type User = {
   password: string;
 
   wins: number;
-  inGame: boolean;
+  gameId: number; // -1 if not in game
 };
 
 export type Room = {
   id: number;
   users: User[];
+};
+
+export type Game = {
+  id: number;
+  players: User[];
+  fields: string[];
 };
