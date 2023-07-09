@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "description": "Implementation battleship game backend using websocket",
   "main": "index.js",
-  "type": "module",
+  
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\" --fix",
-    "start": "ts-node --esm ./index.ts",
-    "start:dev": "nodemon --exec ts-node index.ts --project ./tsconfig.json"
+    "start:ui": "ts-node ./index.js",
+    "start": "ts-node --esm ./src/ws_server/index.ts",
+    "start:dev": "npx nodemon"
+    
   },
   "author": "Eduard Nebolsin",
   "repository": {

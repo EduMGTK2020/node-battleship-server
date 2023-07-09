@@ -1,18 +1,15 @@
 {
-  "ts-node": {
-    "transpileOnly": true,
-    "files": true,
-    "esm": true,
-    "compilerOptions": {
-      "module": "ESNext"
-    }
-  },
   "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "Node",
-    //"lib": ["es6"],
-    //"allowJs": true,
-    //"outDir": "build",
-    //"esModuleInterop": true
-  }
+    "target": "es2016",
+    "lib": ["es6"],
+    "module": "commonjs",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "outDir": "build",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "skipLibCheck": true
+  },
 }
