@@ -100,10 +100,9 @@ const removeGameById = (id: number) => {
   gamesData.splice(index, 1);
 };
 
-const finishGame = (gameId: number, winnerId: number, loserId: number) => {
+const finishGame = (gameId: number, winnerId: number) => {
   removeGameById(gameId);
   addUserWins(winnerId);
-  removeUserById(loserId);
 };
 
 export default {

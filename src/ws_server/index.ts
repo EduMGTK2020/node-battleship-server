@@ -4,9 +4,9 @@ import { WebSocketServer } from 'ws';
 import handler from './handler';
 
 //run server UI
-const HTTP_PORT = 8181;
-console.log(`Start static http server on the ${HTTP_PORT} port!`);
-httpServer.listen(8181);
+// const HTTP_PORT = 8181;
+// console.log(`Start static http server on the ${HTTP_PORT} port!`);
+// httpServer.listen(8181);
 
 console.log('Start websocket server on the 3000 port');
 const wsServer = new WebSocketServer({ port: 3000 });

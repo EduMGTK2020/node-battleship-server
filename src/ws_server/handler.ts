@@ -1,5 +1,5 @@
 import { RawData, WebSocket } from 'ws';
-import { Packet, User } from './types';
+import { Packet } from './types';
 import db from './db';
 
 const getRequest = (message: RawData) => {
@@ -12,41 +12,33 @@ const getRequest = (message: RawData) => {
   } as Packet;
 };
 
-const putResponce = (socket: WebSocket, data: string) => {
-  socket.send('' + data);
+const sendResponse = (socket: WebSocket, type: string, data: object) => {
+  const response = JSON.stringify({
+    type: type,
+    data: JSON.stringify(data),
+    id: 0,
+  });
+  socket.send('' + response);
 };
 
 const handleReg = (socket: WebSocket, request: Packet) => {
   const reqData = JSON.parse(request.data);
   if (db.users.userExist(reqData.name)) {
-    putResponce(
-      socket,
-      JSON.stringify({
-        type: 'reg',
-        data: JSON.stringify({
-          name: reqData.name,
-          index: 0,
-          error: true,
-          errorText: `User <${reqData.name}> already exist`,
-        }),
-        id: 0,
-      }),
-    );
+    sendResponse(socket, 'reg', {
+      name: reqData.name,
+      index: 0,
+      error: true,
+      errorText: `User <${reqData.name}> already exist`,
+    });
   } else {
     const newUser = db.users.addUser(reqData.name, reqData.password, socket);
-    putResponce(
-      socket,
-      JSON.stringify({
-        type: 'reg',
-        data: JSON.stringify({
-          name: newUser.name,
-          index: newUser.id,
-          error: false,
-          errorText: '',
-        }),
-        id: 0,
-      }),
-    );
+
+    sendResponse(socket, 'reg', {
+      name: newUser.name,
+      index: newUser.id,
+      error: false,
+      errorText: '',
+    });
     updateRoom();
     updateWinners();
   }
@@ -69,17 +61,10 @@ const handleAddUserToRoom = (socket: WebSocket, request: Packet) => {
     const gameId = db.games.createGame(roomUser, user);
 
     [roomUser, user].map((user) => {
-      putResponce(
-        user.connection,
-        JSON.stringify({
-          type: 'create_game',
-          data: JSON.stringify({
-            idGame: gameId,
-            idPlayer: user.id,
-          }),
-          id: 0,
-        }),
-      );
+      sendResponse(user.connection, 'create_game', {
+        idGame: gameId,
+        idPlayer: user.id,
+      });
     });
   }
 };
@@ -102,14 +87,7 @@ const updateRoom = () => {
   const users = db.users.getAllUsers();
 
   users.map((user) => {
-    putResponce(
-      user.connection,
-      JSON.stringify({
-        type: 'update_room',
-        data: JSON.stringify(roomsList),
-        id: 0,
-      }),
-    );
+    sendResponse(user.connection, 'update_room', roomsList);
   });
 };
 
@@ -118,14 +96,7 @@ const updateWinners = () => {
   const winners = db.users.getWinners();
 
   users.map((user) => {
-    putResponce(
-      user.connection,
-      JSON.stringify({
-        type: 'update_winners',
-        data: JSON.stringify(winners),
-        id: 0,
-      }),
-    );
+    sendResponse(user.connection, 'update_winners', winners);
   });
 };
 
@@ -135,17 +106,10 @@ const finishOnClose = (socket: WebSocket) => {
     const game = db.games.getGameById(user.gameId);
     game.players.forEach((player) => {
       if (player !== user) {
-        db.games.finishGame(game.id, player.id, user.id);
-        putResponce(
-          player.connection,
-          JSON.stringify({
-            type: 'finish',
-            data: JSON.stringify({
-              winPlayer: player.id,
-            }),
-            id: 0,
-          }),
-        );
+        db.games.finishGame(game.id, player.id);
+        sendResponse(player.connection, 'finish', {
+          winPlayer: player.id,
+        });
         updateWinners();
       }
     });
@@ -159,27 +123,13 @@ const handleAddShips = (socket: WebSocket, request: Packet) => {
 
   if (game.fields.length == 2) {
     game.players.map((player) => {
-      putResponce(
-        player.connection,
-        JSON.stringify({
-          type: 'start_game',
-          data: request,
-          id: 0,
-        }),
-      );
+      sendResponse(player.connection, 'start_game', request);
       player.gameId = game.id;
-    });
 
-    putResponce(
-      game.players[0].connection,
-      JSON.stringify({
-        type: 'turn',
-        data: JSON.stringify({
-          currentPlayer: game.players[0].id,
-        }),
-        id: 0,
-      }),
-    );
+      sendResponse(player.connection, 'turn', {
+        currentPlayer: game.players[0].id,
+      });
+    });
   }
 };
 
