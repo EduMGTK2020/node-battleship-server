@@ -1,5 +1,7 @@
 import { WebSocket } from 'ws';
 
+export const NoId = -1;
+
 export type Packet = {
   type: string;
   data: string;
@@ -15,6 +17,7 @@ export type User = {
 
   wins: number;
   gameId: number; // -1 if not in game
+  roomId: number; // -1 if not in room
 };
 
 export type Room = {

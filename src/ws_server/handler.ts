@@ -1,5 +1,5 @@
 import { RawData, WebSocket } from 'ws';
-import { Packet } from './types';
+import { Packet, NoId } from './types';
 import db from './db';
 
 const getRequest = (message: RawData) => {
@@ -42,6 +42,7 @@ const handleReg = (socket: WebSocket, request: Packet) => {
         });
       } else {
         db.users.setAuthStatus(user.id, true);
+        db.users.setUserConnection(socket, user.id);
         sendResponse(socket, 'reg', {
           name: user.name,
           index: user.id,
@@ -51,7 +52,7 @@ const handleReg = (socket: WebSocket, request: Packet) => {
       }
     }
   } else {
-    const newUser = db.users.addUser(reqData.name, reqData.password, socket);
+    const newUser = db.users.addUser(socket, reqData.name, reqData.password);
 
     sendResponse(socket, 'reg', {
       name: newUser.name,
@@ -72,15 +73,28 @@ const handleCreateRoom = (socket: WebSocket) => {
 const handleAddUserToRoom = (socket: WebSocket, request: Packet) => {
   const reqData = JSON.parse(request.data);
   const room = db.rooms.getRoomById(reqData.indexRoom);
-  const roomUser = room.users[0];
+  const roomCreator = room.users[0];
   const user = db.users.getUserByConnection(socket);
 
-  if (roomUser.id !== user.id) {
+  if (roomCreator.id !== user.id) {
     db.rooms.removeRoomById(room.id);
-    updateRoom();
-    const gameId = db.games.createGame(roomUser, user);
 
-    [roomUser, user].map((user) => {
+    const openRooms = db.rooms.getRoomsWithOnePlayer();
+    const roomIdToRemove: number[] = [];
+    openRooms.map((room) => {
+      const creator = room.users[0];
+      if (creator == roomCreator || creator == user) {
+        roomIdToRemove.push(room.id);
+      }
+    });
+    roomIdToRemove.map((roomId) => {
+      db.rooms.removeRoomById(roomId);
+    });
+
+    updateRoom();
+
+    const gameId = db.games.createGame(roomCreator, user);
+    [roomCreator, user].map((user) => {
       sendResponse(user.connection, 'create_game', {
         idGame: gameId,
         idPlayer: user.id,
@@ -122,19 +136,22 @@ const updateWinners = () => {
 
 const finishOnClose = (socket: WebSocket) => {
   const user = db.users.getUserByConnection(socket);
-  db.users.setAuthStatus(user.id, false);
-
-  if (user && user.gameId != -1) {
-    const game = db.games.getGameById(user.gameId);
-    game.players.forEach((player) => {
-      if (player !== user) {
-        db.games.finishGame(game.id, player.id);
-        sendResponse(player.connection, 'finish', {
-          winPlayer: player.id,
-        });
-        updateWinners();
-      }
-    });
+  if (user != undefined) {
+    db.users.setAuthStatus(user.id, false);
+    if (user.gameId != NoId) {
+      const game = db.games.getGameById(user.gameId);
+      console.log(game);
+      game.players.forEach((player) => {
+        if (player !== user) {
+          db.games.finishGame(game.id, player.id);
+          console.log(player);
+          sendResponse(player.connection, 'finish', {
+            winPlayer: player.id,
+          });
+          updateWinners();
+        }
+      });
+    }
   }
 };
 

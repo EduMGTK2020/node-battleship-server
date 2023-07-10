@@ -1,4 +1,4 @@
-import { User, Room, Game } from './types';
+import { User, Room, Game, NoId } from './types';
 import { WebSocket } from 'ws';
 
 let nextUserId = 0;
@@ -21,7 +21,7 @@ const getUserByConnection = (socket: WebSocket) => {
   return usersData.find((user) => user.connection === socket) as User;
 };
 
-const addUser = (name: string, password: string, socket: WebSocket) => {
+const addUser = (socket: WebSocket, name: string, password: string) => {
   const userId = nextUserId;
   nextUserId++;
 
@@ -31,7 +31,8 @@ const addUser = (name: string, password: string, socket: WebSocket) => {
     id: userId,
     password: password,
     wins: 0,
-    gameId: -1,
+    gameId: NoId,
+    roomId: NoId,
     isAuth: true,
   } as User;
 
@@ -51,7 +52,7 @@ const getAllUsers = () => {
 
 const addUserWins = (id: number) => {
   const user = getUserById(id);
-  user.gameId = -1;
+  user.gameId = NoId;
   user.wins++;
 };
 
@@ -60,18 +61,28 @@ const setAuthStatus = (id: number, status: boolean) => {
   user.isAuth = status;
 };
 
+const setUserConnection = (socket: WebSocket, id: number) => {
+  const user = getUserById(id);
+  user.connection = socket;
+  user.gameId = NoId;
+  user.roomId = NoId;
+};
+
 const getRoomsWithOnePlayer = () => {
   return roomsData.filter((room) => room.users.length == 1);
 };
 
 const createRoom = (socket: WebSocket) => {
-  const user = usersData.find((user) => user.connection === socket);
-  const newRoom = {
-    id: nextRoomId,
-    users: [user],
-  } as Room;
-  roomsData.push(newRoom);
-  nextRoomId++;
+  const user = getUserByConnection(socket);
+  if (user.roomId == NoId) {
+    const newRoom = {
+      id: nextRoomId,
+      users: [user],
+    } as Room;
+    user.roomId = nextRoomId;
+    roomsData.push(newRoom);
+    nextRoomId++;
+  }
 };
 
 const getRoomById = (id: number) => {
@@ -79,6 +90,9 @@ const getRoomById = (id: number) => {
 };
 
 const removeRoomById = (id: number) => {
+  const room = getRoomById(id);
+  room.users[0].roomId = NoId;
+
   const index = roomsData.findIndex((room) => room.id === id);
   roomsData.splice(index, 1);
 };
@@ -121,6 +135,7 @@ export default {
     getUserById,
     getUserByName,
     getUserByConnection,
+    setUserConnection,
     removeUserById,
     getAllUsers,
 
