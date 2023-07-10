@@ -9,8 +9,12 @@ const usersData: User[] = [];
 const roomsData: Room[] = [];
 const gamesData: Game[] = [];
 
-const userExist = (name: string) => {
-  return usersData.find((user) => user.name === name) != undefined;
+const getUserByName = (name: string) => {
+  return usersData.find((user) => user.name === name) as User;
+};
+
+const getUserById = (id: number) => {
+  return usersData.find((user) => user.id === id) as User;
 };
 
 const getUserByConnection = (socket: WebSocket) => {
@@ -28,6 +32,7 @@ const addUser = (name: string, password: string, socket: WebSocket) => {
     password: password,
     wins: 0,
     gameId: -1,
+    isAuth: true,
   } as User;
 
   usersData.push(newUser);
@@ -45,9 +50,14 @@ const getAllUsers = () => {
 };
 
 const addUserWins = (id: number) => {
-  const user = usersData.find((user) => user.id === id) as User;
+  const user = getUserById(id);
   user.gameId = -1;
   user.wins++;
+};
+
+const setAuthStatus = (id: number, status: boolean) => {
+  const user = getUserById(id);
+  user.isAuth = status;
 };
 
 const getRoomsWithOnePlayer = () => {
@@ -107,13 +117,16 @@ const finishGame = (gameId: number, winnerId: number) => {
 
 export default {
   users: {
-    userExist,
     addUser,
+    getUserById,
+    getUserByName,
+    getUserByConnection,
     removeUserById,
     getAllUsers,
-    getUserByConnection,
+
     getWinners,
     addUserWins,
+    setAuthStatus,
   },
   rooms: { createRoom, getRoomsWithOnePlayer, getRoomById, removeRoomById },
   games: { createGame, getGameById, removeGameById, finishGame },

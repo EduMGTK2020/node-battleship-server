@@ -11,6 +11,7 @@ export type User = {
   id: number;
   name: string;
   password: string;
+  isAuth: boolean;
 
   wins: number;
   gameId: number; // -1 if not in game

@@ -23,13 +23,33 @@ const sendResponse = (socket: WebSocket, type: string, data: object) => {
 
 const handleReg = (socket: WebSocket, request: Packet) => {
   const reqData = JSON.parse(request.data);
-  if (db.users.userExist(reqData.name)) {
-    sendResponse(socket, 'reg', {
-      name: reqData.name,
-      index: 0,
-      error: true,
-      errorText: `User <${reqData.name}> already exist`,
-    });
+  const user = db.users.getUserByName(reqData.name);
+  if (user) {
+    if (user.password !== reqData.password) {
+      sendResponse(socket, 'reg', {
+        name: reqData.name,
+        index: 0,
+        error: true,
+        errorText: `Wrong password`,
+      });
+    } else {
+      if (user.isAuth) {
+        sendResponse(socket, 'reg', {
+          name: reqData.name,
+          index: 0,
+          error: true,
+          errorText: `User already auth`,
+        });
+      } else {
+        db.users.setAuthStatus(user.id, true);
+        sendResponse(socket, 'reg', {
+          name: user.name,
+          index: user.id,
+          error: false,
+          errorText: '',
+        });
+      }
+    }
   } else {
     const newUser = db.users.addUser(reqData.name, reqData.password, socket);
 
@@ -39,9 +59,9 @@ const handleReg = (socket: WebSocket, request: Packet) => {
       error: false,
       errorText: '',
     });
-    updateRoom();
-    updateWinners();
   }
+  updateRoom();
+  updateWinners();
 };
 
 const handleCreateRoom = (socket: WebSocket) => {
@@ -102,6 +122,8 @@ const updateWinners = () => {
 
 const finishOnClose = (socket: WebSocket) => {
   const user = db.users.getUserByConnection(socket);
+  db.users.setAuthStatus(user.id, false);
+
   if (user && user.gameId != -1) {
     const game = db.games.getGameById(user.gameId);
     game.players.forEach((player) => {
@@ -119,6 +141,10 @@ const finishOnClose = (socket: WebSocket) => {
 const handleAddShips = (socket: WebSocket, request: Packet) => {
   const reqData = JSON.parse(request.data);
   const game = db.games.getGameById(reqData.gameId);
+
+  // add ships
+  console.log(request);
+
   game.fields.push('' + reqData.indexPlayer);
 
   if (game.fields.length == 2) {
