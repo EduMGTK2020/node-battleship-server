@@ -1,4 +1,4 @@
-import { User, Room, Game, NoId } from './types';
+import { User, Room, Game, NoId, AddShipsDataPacket, Ship } from './types';
 import { WebSocket } from 'ws';
 
 let nextUserId = 0;
@@ -133,15 +133,52 @@ const finishGame = (gameId: number, winnerId: number) => {
 
 const checkAttack = (gameId: number, x: number, y: number) => {
   const game = getGameById(gameId);
+  const userToAttack = game.players[1 - game.currentPlayerIndex];
+  const fieldToAttack = game.fields.get(userToAttack.id) as Ship[];
+  const pointToSearch = JSON.stringify({ x, y });
+
   const result = {
-    gameOver: false,
+    gameOver: true,
     attack: '',
   };
-  if (x == y) {
-    result.gameOver = true;
-  }
   result.attack = 'miss';
+
+  fieldToAttack.forEach((ship) => {
+    if (ship.points.alive.includes(pointToSearch)) {
+      result.attack = 'shot';
+      ship.points.alive = ship.points.alive.replace(pointToSearch, '');
+      ship.points.dead += pointToSearch;
+      if (ship.points.alive.length == 0) {
+        ship.alive = false;
+        result.attack = 'killed';
+      }
+    }
+    result.gameOver = result.gameOver && !ship.alive;
+  });
   return result;
+};
+
+const addShips = (gameId: number, addShipsData: AddShipsDataPacket) => {
+  const game = getGameById(gameId);
+  const ships: Ship[] = [];
+  addShipsData.ships.map((ship) => {
+    const kx = ship.direction ? 0 : 1;
+    const ky = 1 - kx;
+    const x = ship.position.x;
+    const y = ship.position.y;
+    const len = ship.length - 1;
+    let str = '';
+    for (let ax = x; ax <= x + len * kx; ax++) {
+      for (let ay = y; ay <= y + len * ky; ay++) {
+        str += JSON.stringify({
+          x: ax,
+          y: ay,
+        });
+      }
+    }
+    ships.push({ points: { alive: str, dead: '' }, alive: true });
+  });
+  game.fields.set(addShipsData.indexPlayer, ships);
 };
 
 export default {
@@ -159,5 +196,12 @@ export default {
     setAuthStatus,
   },
   rooms: { createRoom, getRoomsWithOnePlayer, getRoomById, removeRoomById },
-  games: { createGame, getGameById, removeGameById, finishGame, checkAttack },
+  games: {
+    createGame,
+    getGameById,
+    removeGameById,
+    finishGame,
+    checkAttack,
+    addShips,
+  },
 };

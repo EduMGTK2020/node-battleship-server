@@ -140,11 +140,9 @@ const finishOnClose = (socket: WebSocket) => {
     db.users.setAuthStatus(user.id, false);
     if (user.gameId != NoId) {
       const game = db.games.getGameById(user.gameId);
-      console.log(game);
       game.players.forEach((player) => {
         if (player !== user) {
           db.games.finishGame(game.id, player.id);
-          console.log(player);
           sendResponse(player.connection, 'finish', {
             winPlayer: player.id,
           });
@@ -159,18 +157,8 @@ const handleAddShips = (socket: WebSocket, request: Packet) => {
   const reqData = JSON.parse(request.data);
   const game = db.games.getGameById(reqData.gameId);
 
-  // add ships
-  const packet = JSON.parse(request.data) as AddShipsDataPacket;
-  //console.log(reqData.ships);
-  game.fields.set(reqData.indexPlayer, '' + reqData.indexPlayer);
-  // console.log(game);
-
-  //const  = db
-  // let shipNo = 1;
-
-  // reqData.ships.map((ship) => {});
-
-  //
+  const addShipsData = JSON.parse(request.data) as AddShipsDataPacket;
+  db.games.addShips(game.id, addShipsData);
 
   if (game.fields.size == 2) {
     game.players.map((player) => {
@@ -192,13 +180,15 @@ const handleAttack = (socket: WebSocket, request: Packet) => {
   if (game.players[game.currentPlayerIndex] == player) {
     const result = db.games.checkAttack(game.id, reqData.x, reqData.y);
 
-    sendResponse(player.connection, 'attack', {
-      position: {
-        x: reqData.x,
-        y: reqData.y,
-      },
-      currentPlayer: player.id,
-      status: result.attack,
+    game.players.map((p) => {
+      sendResponse(p.connection, 'attack', {
+        position: {
+          x: reqData.x,
+          y: reqData.y,
+        },
+        currentPlayer: player.id,
+        status: result.attack,
+      });
     });
 
     if (result.gameOver) {
@@ -220,8 +210,8 @@ const handleAttack = (socket: WebSocket, request: Packet) => {
     //   // game.currentPlayerIndex = 1 - game.currentPlayerIndex;
     // }
 
-    game.players.map((player) => {
-      sendResponse(player.connection, 'turn', {
+    game.players.map((p) => {
+      sendResponse(p.connection, 'turn', {
         currentPlayer: game.players[game.currentPlayerIndex].id,
       });
     });

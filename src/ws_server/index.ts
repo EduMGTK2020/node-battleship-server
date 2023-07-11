@@ -14,7 +14,7 @@ const wsServer = new WebSocketServer({ port: 3000 });
 wsServer.on('connection', (socket) => {
   console.log('connection');
   socket.on('message', (message) => {
-    console.log(message.toString());
+    //console.log(message.toString());
     handler.process(socket, message);
   });
 

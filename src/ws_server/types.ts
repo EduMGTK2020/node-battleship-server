@@ -28,12 +28,16 @@ export type Room = {
 export type Game = {
   id: number;
   players: User[];
-  fields: Map<number, string>;
+  fields: Map<number, Ship[]>;
   currentPlayerIndex: number;
 };
 
-export type Ships = {
-  id: number;
+export type Ship = {
+  points: {
+    alive: string;
+    dead: string;
+  };
+  alive: boolean;
 };
 
 export type Position = {
@@ -47,5 +51,6 @@ export type Position = {
 };
 
 export type AddShipsDataPacket = {
+  indexPlayer: number;
   ships: Position[];
 };
