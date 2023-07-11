@@ -106,10 +106,12 @@ const getWinners = () => {
 const createGame = (player1: User, player2: User) => {
   const gameId = nextGameId;
   nextGameId++;
+
   const newGame = {
     id: gameId,
     players: [player1, player2],
-    fields: [],
+    fields: new Map(),
+    currentPlayerIndex: 0,
   } as Game;
   gamesData.push(newGame);
   return gameId;
@@ -129,6 +131,19 @@ const finishGame = (gameId: number, winnerId: number) => {
   addUserWins(winnerId);
 };
 
+const checkAttack = (gameId: number, x: number, y: number) => {
+  const game = getGameById(gameId);
+  const result = {
+    gameOver: false,
+    attack: '',
+  };
+  if (x == y) {
+    result.gameOver = true;
+  }
+  result.attack = 'miss';
+  return result;
+};
+
 export default {
   users: {
     addUser,
@@ -144,5 +159,5 @@ export default {
     setAuthStatus,
   },
   rooms: { createRoom, getRoomsWithOnePlayer, getRoomById, removeRoomById },
-  games: { createGame, getGameById, removeGameById, finishGame },
+  games: { createGame, getGameById, removeGameById, finishGame, checkAttack },
 };

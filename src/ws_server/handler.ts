@@ -1,5 +1,5 @@
 import { RawData, WebSocket } from 'ws';
-import { Packet, NoId } from './types';
+import { Packet, NoId, AddShipsDataPacket } from './types';
 import db from './db';
 
 const getRequest = (message: RawData) => {
@@ -160,17 +160,69 @@ const handleAddShips = (socket: WebSocket, request: Packet) => {
   const game = db.games.getGameById(reqData.gameId);
 
   // add ships
-  console.log(request);
+  const packet = JSON.parse(request.data) as AddShipsDataPacket;
+  //console.log(reqData.ships);
+  game.fields.set(reqData.indexPlayer, '' + reqData.indexPlayer);
+  // console.log(game);
 
-  game.fields.push('' + reqData.indexPlayer);
+  //const  = db
+  // let shipNo = 1;
 
-  if (game.fields.length == 2) {
+  // reqData.ships.map((ship) => {});
+
+  //
+
+  if (game.fields.size == 2) {
     game.players.map((player) => {
-      sendResponse(player.connection, 'start_game', request);
+      sendResponse(player.connection, 'start_game', reqData);
       player.gameId = game.id;
 
       sendResponse(player.connection, 'turn', {
-        currentPlayer: game.players[0].id,
+        currentPlayer: game.players[game.currentPlayerIndex].id,
+      });
+    });
+  }
+};
+
+const handleAttack = (socket: WebSocket, request: Packet) => {
+  const reqData = JSON.parse(request.data);
+  const game = db.games.getGameById(reqData.gameId);
+  const player = db.users.getUserByConnection(socket);
+
+  if (game.players[game.currentPlayerIndex] == player) {
+    const result = db.games.checkAttack(game.id, reqData.x, reqData.y);
+
+    sendResponse(player.connection, 'attack', {
+      position: {
+        x: reqData.x,
+        y: reqData.y,
+      },
+      currentPlayer: player.id,
+      status: result.attack,
+    });
+
+    if (result.gameOver) {
+      db.games.finishGame(game.id, player.id);
+      game.players.map((p) => {
+        sendResponse(p.connection, 'finish', {
+          winPlayer: player.id,
+        });
+      });
+      updateWinners();
+      return;
+    }
+
+    if (result.attack == 'miss') {
+      game.currentPlayerIndex = 1 - game.currentPlayerIndex;
+    }
+
+    // if (resultAttack == 'killed') {
+    //   // game.currentPlayerIndex = 1 - game.currentPlayerIndex;
+    // }
+
+    game.players.map((player) => {
+      sendResponse(player.connection, 'turn', {
+        currentPlayer: game.players[game.currentPlayerIndex].id,
       });
     });
   }
@@ -190,6 +242,9 @@ const process = (socket: WebSocket, message: RawData) => {
   }
   if (request.type == 'add_ships') {
     return handleAddShips(socket, request);
+  }
+  if (request.type == 'attack') {
+    return handleAttack(socket, request);
   }
 };
 
