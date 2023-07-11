@@ -206,9 +206,25 @@ const handleAttack = (socket: WebSocket, request: Packet) => {
       game.currentPlayerIndex = 1 - game.currentPlayerIndex;
     }
 
-    // if (resultAttack == 'killed') {
-    //   // game.currentPlayerIndex = 1 - game.currentPlayerIndex;
-    // }
+    if (result.attack == 'killed') {
+      const pointsToOpen = db.games.getPointsToOpen(game.id);
+
+      console.log(pointsToOpen);
+
+      pointsToOpen.map((point) => {
+        const pointToOpen = JSON.parse(point);
+        game.players.map((p) => {
+          sendResponse(p.connection, 'attack', {
+            position: {
+              x: pointToOpen.x,
+              y: pointToOpen.y,
+            },
+            currentPlayer: player.id,
+            status: 'miss',
+          });
+        });
+      });
+    }
 
     game.players.map((p) => {
       sendResponse(p.connection, 'turn', {

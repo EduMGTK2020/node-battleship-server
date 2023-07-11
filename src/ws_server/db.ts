@@ -176,9 +176,44 @@ const addShips = (gameId: number, addShipsData: AddShipsDataPacket) => {
         });
       }
     }
-    ships.push({ points: { alive: str, dead: '' }, alive: true });
+
+    //around cell
+    const xa = ship.position.x - 1 >= 0 ? ship.position.x - 1 : 0;
+    const ya = ship.position.y - 1 >= 0 ? ship.position.y - 1 : 0;
+    const lena = ship.length;
+
+    const stra: string[] = [];
+    let around;
+    for (let ax = xa; ax <= xa + 2 * ky + lena * kx && ax < 10; ax++) {
+      for (let ay = ya; ay <= ya + 2 * kx + lena * ky && ay < 10; ay++) {
+        around = JSON.stringify({
+          x: ax,
+          y: ay,
+        });
+        if (!str.includes(around)) {
+          stra.push(around);
+        }
+      }
+    }
+
+    ships.push({ points: { alive: str, dead: '', around: stra }, alive: true });
   });
   game.fields.set(addShipsData.indexPlayer, ships);
+};
+
+const getPointsToOpen = (gameId: number): string[] => {
+  const game = getGameById(gameId);
+  const user = game.players[1 - game.currentPlayerIndex];
+  const ships = game.fields.get(user.id) as Ship[];
+  let around: string[] = [];
+  ships.map((ship) => {
+    console.log(ship);
+    if (!ship.alive && ship.points.around.length != 0) {
+      around = ship.points.around.slice(0);
+      ship.points.around = [];
+    }
+  });
+  return around;
 };
 
 export default {
@@ -203,5 +238,6 @@ export default {
     finishGame,
     checkAttack,
     addShips,
+    getPointsToOpen,
   },
 };

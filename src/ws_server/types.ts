@@ -36,6 +36,7 @@ export type Ship = {
   points: {
     alive: string;
     dead: string;
+    around: string[];
   };
   alive: boolean;
 };
