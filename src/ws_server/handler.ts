@@ -140,8 +140,6 @@ const handleAddShips = (socket: WebSocket, request: Packet) => {
   const reqData = JSON.parse(request.data);
   const game = db.games.getGameById(reqData.gameId);
 
-  console.log('ADD SHIPS - ' + game.id + ' - ' + reqData.indexPlayer);
-
   const addShipsData = JSON.parse(request.data) as AddShipsDataPacket;
   db.games.addShips(game.id, addShipsData);
 

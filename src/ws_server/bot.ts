@@ -2,6 +2,7 @@ import { RawData, WebSocket } from 'ws';
 import { getRequest, sendResponse } from './helpers';
 import { User, NoId } from './types';
 import db from './db';
+import { getShips } from './ships';
 
 export const startBot = (user: User) => {
   const client = new WebSocket('ws://localhost:3000');
@@ -9,7 +10,6 @@ export const startBot = (user: User) => {
   let userBotId = NoId;
 
   client.on('open', () => {
-    console.log('BOT CONNECT');
     sendResponse(client, 'reg', {
       name: 'BOT for ' + user.name,
       password: 'BOT',
@@ -35,22 +35,11 @@ export const startBot = (user: User) => {
       const reqData = JSON.parse(request.data);
       sendResponse(client, 'add_ships', {
         gameId: reqData.idGame,
-        ships: [
-          {
-            position: { x: 2, y: 3 },
-            direction: false,
-            type: 'huge',
-            length: 4,
-          },
-        ],
+        ships: JSON.parse(getShips()),
         indexPlayer: reqData.idPlayer,
       });
     }
     if (request.type == 'turn') {
-      console.log('TURN');
-      console.log(request);
-      console.log(client.readyState);
-
       const userBot = db.users.getUserById(userBotId);
       const reqData = JSON.parse(request.data);
       if (userBot.id == reqData.currentPlayer) {

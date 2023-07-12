@@ -212,7 +212,6 @@ const getPointsToClean = (
   let around: string[] = [];
 
   ships.map((ship) => {
-    console.log(ship);
     if (!ship.alive && ship.points.around.length != 0) {
       dead = ship.points.dead.slice(0);
       around = ship.points.around.slice(0);
