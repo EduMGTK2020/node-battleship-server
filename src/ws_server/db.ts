@@ -184,8 +184,8 @@ const addShips = (gameId: number, addShipsData: AddShipsDataPacket) => {
 
     const stra: string[] = [];
     let around;
-    for (let ax = xa; ax <= xa + 2 * ky + lena * kx && ax < 10; ax++) {
-      for (let ay = ya; ay <= ya + 2 * kx + lena * ky && ay < 10; ay++) {
+    for (let ax = xa; ax <= x + ky + lena * kx && ax < 10; ax++) {
+      for (let ay = ya; ay <= y + kx + lena * ky && ay < 10; ay++) {
         around = JSON.stringify({
           x: ax,
           y: ay,
