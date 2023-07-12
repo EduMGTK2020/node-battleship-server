@@ -35,7 +35,7 @@ export type Game = {
 export type Ship = {
   points: {
     alive: string;
-    dead: string;
+    dead: string[];
     around: string[];
   };
   alive: boolean;

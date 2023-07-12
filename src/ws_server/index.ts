@@ -1,4 +1,4 @@
-import { httpServer } from '../http_server/index.js';
+//import { httpServer } from '../http_server/index.js';
 import { WebSocketServer } from 'ws';
 
 import handler from './handler';
@@ -15,7 +15,11 @@ wsServer.on('connection', (socket) => {
   console.log('connection');
   socket.on('message', (message) => {
     //console.log(message.toString());
-    handler.process(socket, message);
+    try {
+      handler.process(socket, message);
+    } catch (error) {
+      console.log('Server error - ' + (error as Error).message);
+    }
   });
 
   socket.on('error', (error) => {

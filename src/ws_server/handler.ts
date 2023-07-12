@@ -207,11 +207,9 @@ const handleAttack = (socket: WebSocket, request: Packet) => {
     }
 
     if (result.attack == 'killed') {
-      const pointsToOpen = db.games.getPointsToOpen(game.id);
+      const pointsToClean = db.games.getPointsToClean(game.id);
 
-      console.log(pointsToOpen);
-
-      pointsToOpen.map((point) => {
+      pointsToClean.around.map((point) => {
         const pointToOpen = JSON.parse(point);
         game.players.map((p) => {
           sendResponse(p.connection, 'attack', {
@@ -221,6 +219,19 @@ const handleAttack = (socket: WebSocket, request: Packet) => {
             },
             currentPlayer: player.id,
             status: 'miss',
+          });
+        });
+      });
+      pointsToClean.dead.map((point) => {
+        const pointToKill = JSON.parse(point);
+        game.players.map((p) => {
+          sendResponse(p.connection, 'attack', {
+            position: {
+              x: pointToKill.x,
+              y: pointToKill.y,
+            },
+            currentPlayer: player.id,
+            status: 'killed',
           });
         });
       });

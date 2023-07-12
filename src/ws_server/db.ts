@@ -147,7 +147,7 @@ const checkAttack = (gameId: number, x: number, y: number) => {
     if (ship.points.alive.includes(pointToSearch)) {
       result.attack = 'shot';
       ship.points.alive = ship.points.alive.replace(pointToSearch, '');
-      ship.points.dead += pointToSearch;
+      ship.points.dead.push(pointToSearch);
       if (ship.points.alive.length == 0) {
         ship.alive = false;
         result.attack = 'killed';
@@ -196,24 +196,31 @@ const addShips = (gameId: number, addShipsData: AddShipsDataPacket) => {
       }
     }
 
-    ships.push({ points: { alive: str, dead: '', around: stra }, alive: true });
+    ships.push({ points: { alive: str, dead: [], around: stra }, alive: true });
   });
   game.fields.set(addShipsData.indexPlayer, ships);
 };
 
-const getPointsToOpen = (gameId: number): string[] => {
+const getPointsToClean = (
+  gameId: number,
+): { dead: string[]; around: string[] } => {
   const game = getGameById(gameId);
   const user = game.players[1 - game.currentPlayerIndex];
   const ships = game.fields.get(user.id) as Ship[];
+
+  let dead: string[] = [];
   let around: string[] = [];
+
   ships.map((ship) => {
     console.log(ship);
     if (!ship.alive && ship.points.around.length != 0) {
+      dead = ship.points.dead.slice(0);
       around = ship.points.around.slice(0);
+      ship.points.dead = [];
       ship.points.around = [];
     }
   });
-  return around;
+  return { dead, around };
 };
 
 export default {
@@ -238,6 +245,6 @@ export default {
     finishGame,
     checkAttack,
     addShips,
-    getPointsToOpen,
+    getPointsToClean,
   },
 };
