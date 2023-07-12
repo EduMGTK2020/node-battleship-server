@@ -274,6 +274,7 @@ const process = (socket: WebSocket, message: RawData) => {
   if (request.type == 'randomAttack') {
     return handleRandomAttack(socket, request);
   }
+  throw new Error('Unknown message type - ' + request.type);
 };
 
 const close = (socket: WebSocket) => {
