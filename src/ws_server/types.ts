@@ -2,6 +2,14 @@ import { WebSocket } from 'ws';
 
 export const NoId = -1;
 
+export const color = {
+  default: '\x1b[0m',
+  bold: '\x1b[1m',
+  error: '\x1b[31m',
+  system: '\x1b[32m',
+  user: '\x1b[33m',
+};
+
 export type Packet = {
   type: string;
   data: string;

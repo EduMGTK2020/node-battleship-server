@@ -1,12 +1,15 @@
 import { RawData, WebSocket } from 'ws';
 import { Packet, NoId, AddShipsDataPacket } from './types';
-import { getRequest, sendResponse } from './helpers';
+import { getRequest, sendResponse, consoleLog } from './helpers';
 import db from './db';
 import { startBot } from './bot';
 
 const handleReg = (socket: WebSocket, request: Packet) => {
   const reqData = JSON.parse(request.data);
   const user = db.users.getUserByName(reqData.name);
+
+  consoleLog('system', 'Registration: ' + reqData.name);
+
   if (user) {
     if (user.password !== reqData.password) {
       sendResponse(socket, 'reg', {

@@ -1,15 +1,7 @@
-//import { httpServer } from '../http_server/index.js';
+// import { httpServer } from '../http_server/index.js';
 import { WebSocketServer } from 'ws';
-
+import { color } from './types';
 import handler from './handler';
-
-const color = {
-  default: '\x1b[0m',
-  bold: '\x1b[1m',
-  error: '\x1b[31m',
-  system: '\x1b[32m',
-  user: '\x1b[33m',
-};
 
 //run server UI
 // const HTTP_PORT = 8181;

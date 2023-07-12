@@ -1,5 +1,5 @@
 import { RawData, WebSocket } from 'ws';
-import { Packet } from './types';
+import { Packet, color } from './types';
 
 export const getRequest = (message: RawData) => {
   const packet = JSON.parse(message.toString());
@@ -18,4 +18,22 @@ export const sendResponse = (socket: WebSocket, type: string, data: object) => {
     id: 0,
   });
   socket.send('' + response);
+};
+
+export const consoleLog = (type: string, message: string) => {
+  let colorType = '';
+  switch (type) {
+    case 'server':
+      colorType = color.system;
+      break;
+    case 'bot':
+      colorType = color.user;
+      break;
+    case 'error':
+      colorType = color.error;
+      break;
+    default:
+      colorType = color.default;
+  }
+  console.log(colorType + message + color.default);
 };
