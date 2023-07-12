@@ -1,25 +1,8 @@
 import { RawData, WebSocket } from 'ws';
 import { Packet, NoId, AddShipsDataPacket } from './types';
+import { getRequest, sendResponse } from './helpers';
 import db from './db';
-
-const getRequest = (message: RawData) => {
-  const packet = JSON.parse(message.toString());
-
-  return {
-    type: packet.type,
-    data: packet.data,
-    id: 0,
-  } as Packet;
-};
-
-const sendResponse = (socket: WebSocket, type: string, data: object) => {
-  const response = JSON.stringify({
-    type: type,
-    data: JSON.stringify(data),
-    id: 0,
-  });
-  socket.send('' + response);
-};
+import { startBot } from './bot';
 
 const handleReg = (socket: WebSocket, request: Packet) => {
   const reqData = JSON.parse(request.data);
@@ -140,7 +123,7 @@ const finishOnClose = (socket: WebSocket) => {
     db.users.setAuthStatus(user.id, false);
     if (user.gameId != NoId) {
       const game = db.games.getGameById(user.gameId);
-      game.players.forEach((player) => {
+      game?.players.forEach((player) => {
         if (player !== user) {
           db.games.finishGame(game.id, player.id);
           sendResponse(player.connection, 'finish', {
@@ -156,6 +139,8 @@ const finishOnClose = (socket: WebSocket) => {
 const handleAddShips = (socket: WebSocket, request: Packet) => {
   const reqData = JSON.parse(request.data);
   const game = db.games.getGameById(reqData.gameId);
+
+  console.log('ADD SHIPS - ' + game.id + ' - ' + reqData.indexPlayer);
 
   const addShipsData = JSON.parse(request.data) as AddShipsDataPacket;
   db.games.addShips(game.id, addShipsData);
@@ -253,6 +238,11 @@ const handleRandomAttack = (socket: WebSocket, request: Packet) => {
   handleAttack(socket, request);
 };
 
+const handleSinglePlay = (socket: WebSocket) => {
+  const user = db.users.getUserByConnection(socket);
+  startBot(user);
+};
+
 const process = (socket: WebSocket, message: RawData) => {
   const request = getRequest(message);
 
@@ -273,6 +263,9 @@ const process = (socket: WebSocket, message: RawData) => {
   }
   if (request.type == 'randomAttack') {
     return handleRandomAttack(socket, request);
+  }
+  if (request.type == 'single_play') {
+    return handleSinglePlay(socket);
   }
   throw new Error('Unknown message type - ' + request.type);
 };
