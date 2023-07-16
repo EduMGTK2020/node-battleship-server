@@ -20,20 +20,18 @@ export const sendResponse = (socket: WebSocket, type: string, data: object) => {
   socket.send('' + response);
 };
 
-export const consoleLog = (type: string, message: string) => {
-  let colorType = '';
-  switch (type) {
-    case 'server':
-      colorType = color.system;
-      break;
-    case 'bot':
-      colorType = color.user;
-      break;
-    case 'error':
-      colorType = color.error;
-      break;
-    default:
-      colorType = color.default;
-  }
-  console.log(colorType + message + color.default);
+export const printServer = (message: string) => {
+  console.log(color.server + '[server] ' + message + color.default);
+};
+
+export const printBot = (message: string) => {
+  console.log(color.bot + '[bot] ' + message + color.default);
+};
+
+export const printError = (message: string) => {
+  console.log(color.error + '[error] ' + message + color.default);
+};
+
+export const print = (message: string) => {
+  console.log('[handler] ' + message);
 };

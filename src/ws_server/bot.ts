@@ -1,5 +1,5 @@
 import { RawData, WebSocket } from 'ws';
-import { getRequest, sendResponse } from './helpers';
+import { getRequest, sendResponse, printBot, printError } from './helpers';
 import { User, NoId } from './types';
 import db from './db';
 import { getShips } from './ships';
@@ -10,6 +10,7 @@ export const startBot = (user: User) => {
   let userBotId = NoId;
 
   client.on('open', () => {
+    printBot('Start bot for ' + user.name);
     sendResponse(client, 'reg', {
       name: 'BOT for ' + user.name,
       password: 'BOT',
@@ -18,6 +19,9 @@ export const startBot = (user: User) => {
 
   client.on('message', (message: RawData) => {
     const request = getRequest(message);
+
+    printBot('Handle message - ' + request.type);
+
     if (request.type == 'reg') {
       const reqData = JSON.parse(request.data);
       const userBot = db.users.getUserById(reqData.index);
@@ -52,19 +56,21 @@ export const startBot = (user: User) => {
       }
     }
     if (request.type == 'finish') {
+      printBot('Finish bot for ' + user.name);
       client.close();
     }
   });
 
   client.on('close', () => {
+    printBot('Close bot for ' + user.name);
     client.close();
   });
 
   client.on('error', (error: Error) => {
-    console.log('Error: ' + error.message);
+    printError('Error: ' + error.message);
   });
 
   client.on('connectFailed', (error: Error) => {
-    console.log('Connect Error: ' + error.message);
+    printError('Connect Error: ' + error.message);
   });
 };

@@ -114,6 +114,10 @@ const createGame = (player1: User, player2: User) => {
     currentPlayerIndex: 0,
   } as Game;
   gamesData.push(newGame);
+
+  player1.gameId = gameId;
+  player2.gameId = gameId;
+
   return gameId;
 };
 

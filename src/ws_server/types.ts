@@ -4,10 +4,9 @@ export const NoId = -1;
 
 export const color = {
   default: '\x1b[0m',
-  bold: '\x1b[1m',
   error: '\x1b[31m',
-  system: '\x1b[32m',
-  user: '\x1b[33m',
+  server: '\x1b[32m',
+  bot: '\x1b[34m',
 };
 
 export type Packet = {

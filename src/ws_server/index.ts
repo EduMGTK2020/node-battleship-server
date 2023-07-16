@@ -1,34 +1,35 @@
 // import { httpServer } from '../http_server/index.js';
 import { WebSocketServer } from 'ws';
-import { color } from './types';
 import handler from './handler';
+import { printError, printServer } from './helpers';
 
 //run server UI
 // const HTTP_PORT = 8181;
 // console.log(`Start static http server on the ${HTTP_PORT} port!`);
 // httpServer.listen(8181);
 
-console.log('Start websocket server on the 3000 port');
+printServer(
+  'Start websocket server on the 3000 port, to start game open http://localhost:8181 in browser',
+);
 const wsServer = new WebSocketServer({ port: 3000 });
 
 wsServer.on('connection', (socket) => {
-  console.log('connection');
+  printServer('client connected');
   socket.on('message', (message) => {
     //console.log(message.toString());
     try {
       handler.process(socket, message);
     } catch (error) {
-      console.log(color.error + 'Server error - ' + (error as Error).message);
-      console.log(message.toString() + color.default);
+      printError('error (on message): ' + (error as Error).message);
     }
   });
 
   socket.on('error', (error) => {
-    console.log('error ' + error);
+    printError('error (on error): ' + (error as Error).message);
   });
 
   socket.on('close', () => {
-    console.log('close');
+    printServer('client disconnected');
     handler.close(socket);
     socket.close();
   });
