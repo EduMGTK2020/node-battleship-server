@@ -73,18 +73,6 @@ const handleAddUserToRoom = (socket: WebSocket, request: Packet) => {
     db.rooms.removeRoomById(room.id);
     db.rooms.removePlayersRooms(roomCreator, user);
 
-    // const openRooms = db.rooms.getRoomsWithOnePlayer();
-    // const roomIdToRemove: number[] = [];
-    // openRooms.map((room) => {
-    //   const creator = room.users[0];
-    //   if (creator == roomCreator || creator == user) {
-    //     roomIdToRemove.push(room.id);
-    //   }
-    // });
-    // roomIdToRemove.map((roomId) => {
-    //   db.rooms.removeRoomById(roomId);
-    // });
-
     updateRoom();
 
     const gameId = db.games.createGame(roomCreator, user);
