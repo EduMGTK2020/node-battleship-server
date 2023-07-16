@@ -21,7 +21,6 @@ wsServer.on('connection', (socket) => {
       handler.process(socket, message);
     } catch (error) {
       printError('error (on message): ' + (error as Error).message);
-      console.log(error);
     }
   });
 
