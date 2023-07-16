@@ -1,6 +1,12 @@
 import { RawData, WebSocket } from 'ws';
 import { Packet, NoId, AddShipsDataPacket } from './types';
-import { getRequest, sendResponse, printServer } from './helpers';
+import {
+  getRequest,
+  sendResponse,
+  printCommand,
+  printResult,
+  printServer,
+} from './helpers';
 import db from './db';
 import { startBot } from './bot';
 
@@ -10,7 +16,7 @@ const handleReg = (socket: WebSocket, request: Packet) => {
 
   if (user) {
     if (user.password !== reqData.password) {
-      printServer('login - ' + reqData.name + ' - wrong password');
+      printResult('user ' + reqData.name + ' - wrong password');
       sendResponse(socket, 'reg', {
         name: reqData.name,
         index: 0,
@@ -19,7 +25,7 @@ const handleReg = (socket: WebSocket, request: Packet) => {
       });
     } else {
       if (user.isAuth && user.password != 'BOT') {
-        printServer('login - ' + reqData.name + ' already auth');
+        printResult('user ' + reqData.name + ' already auth');
         sendResponse(socket, 'reg', {
           name: reqData.name,
           index: 0,
@@ -27,7 +33,7 @@ const handleReg = (socket: WebSocket, request: Packet) => {
           errorText: `User already auth`,
         });
       } else {
-        printServer('login - ' + reqData.name + '- Ok');
+        printResult('user ' + reqData.name + ' login');
         db.users.setAuthStatus(user.id, true);
         db.users.setUserConnection(socket, user.id);
         sendResponse(socket, 'reg', {
@@ -40,7 +46,7 @@ const handleReg = (socket: WebSocket, request: Packet) => {
     }
   } else {
     const newUser = db.users.addUser(socket, reqData.name, reqData.password);
-    printServer('add new user - ' + reqData.name);
+    printResult('add new user ' + reqData.name);
     sendResponse(socket, 'reg', {
       name: newUser.name,
       index: newUser.id,
@@ -53,8 +59,6 @@ const handleReg = (socket: WebSocket, request: Packet) => {
 };
 
 const handleCreateRoom = (socket: WebSocket) => {
-  const user = db.users.getUserByConnection(socket);
-  printServer('user ' + user.name + 'create room');
   db.rooms.createRoom(socket);
   updateRoom();
 };
@@ -66,21 +70,20 @@ const handleAddUserToRoom = (socket: WebSocket, request: Packet) => {
   const user = db.users.getUserByConnection(socket);
 
   if (roomCreator.id !== user.id) {
-    printServer('add user ' + user.name + ' to room');
-
     db.rooms.removeRoomById(room.id);
+    db.rooms.removePlayersRooms(roomCreator, user);
 
-    const openRooms = db.rooms.getRoomsWithOnePlayer();
-    const roomIdToRemove: number[] = [];
-    openRooms.map((room) => {
-      const creator = room.users[0];
-      if (creator == roomCreator || creator == user) {
-        roomIdToRemove.push(room.id);
-      }
-    });
-    roomIdToRemove.map((roomId) => {
-      db.rooms.removeRoomById(roomId);
-    });
+    // const openRooms = db.rooms.getRoomsWithOnePlayer();
+    // const roomIdToRemove: number[] = [];
+    // openRooms.map((room) => {
+    //   const creator = room.users[0];
+    //   if (creator == roomCreator || creator == user) {
+    //     roomIdToRemove.push(room.id);
+    //   }
+    // });
+    // roomIdToRemove.map((roomId) => {
+    //   db.rooms.removeRoomById(roomId);
+    // });
 
     updateRoom();
 
@@ -91,11 +94,15 @@ const handleAddUserToRoom = (socket: WebSocket, request: Packet) => {
         idPlayer: user.id,
       });
     });
+
+    printResult('user ' + user.name + ' added to room');
+    printServer('send create_game for players');
+  } else {
+    printResult('user ' + user.name + ' is room creator and already in');
   }
 };
 
 const updateRoom = () => {
-  printServer('update rooms info');
   const roomsWithOnePlayer = db.rooms.getRoomsWithOnePlayer();
   const roomsList = roomsWithOnePlayer.map((room) => {
     return {
@@ -117,7 +124,6 @@ const updateRoom = () => {
 };
 
 const updateWinners = () => {
-  printServer('update winners info');
   const users = db.users.getAllUsers();
   const winners = db.users.getWinners();
 
@@ -130,7 +136,6 @@ const finishOnClose = (socket: WebSocket) => {
   const user = db.users.getUserByConnection(socket);
 
   if (user != undefined) {
-    printServer('finish on close for ' + user.name);
     db.users.setAuthStatus(user.id, false);
     if (user.gameId != NoId) {
       const game = db.games.getGameById(user.gameId);
@@ -140,7 +145,9 @@ const finishOnClose = (socket: WebSocket) => {
           sendResponse(player.connection, 'finish', {
             winPlayer: player.id,
           });
-          printServer('finish game ' + game.id);
+          printServer(
+            'game over, winner ' + db.users.getUserById(player.id).name,
+          );
           updateWinners();
         }
       });
@@ -155,8 +162,10 @@ const handleAddShips = (socket: WebSocket, request: Packet) => {
 
   const addShipsData = JSON.parse(request.data) as AddShipsDataPacket;
   db.games.addShips(game.id, addShipsData);
+  db.rooms.removePlayersRooms(game.players[0], game.players[1]);
+  updateRoom();
 
-  printServer('add ships to game ' + game.id + ' for ' + user.name);
+  printResult('ships add to game for user ' + user.name);
 
   if (game.fields.size == 2) {
     game.players.map((player) => {
@@ -167,7 +176,7 @@ const handleAddShips = (socket: WebSocket, request: Packet) => {
         currentPlayer: game.players[game.currentPlayerIndex].id,
       });
     });
-    printServer('start game ' + game.id);
+    printServer('send start_game, turn for players');
   }
 };
 
@@ -177,9 +186,11 @@ const handleAttack = (socket: WebSocket, request: Packet) => {
   const player = db.users.getUserByConnection(socket);
 
   if (game.players[game.currentPlayerIndex] == player) {
-    printServer('player ' + player.name + ' attacks');
-
     const result = db.games.checkAttack(game.id, reqData.x, reqData.y);
+
+    printResult(
+      `game ${game.id} x=${reqData.x} y=${reqData.y} => ${result.attack}`,
+    );
 
     game.players.map((p) => {
       sendResponse(p.connection, 'attack', {
@@ -199,7 +210,7 @@ const handleAttack = (socket: WebSocket, request: Packet) => {
           winPlayer: player.id,
         });
       });
-      printServer('finish game ' + game.id);
+      printServer('game over, winner ' + db.users.getUserById(player.id).name);
       updateWinners();
       return;
     }
@@ -244,6 +255,10 @@ const handleAttack = (socket: WebSocket, request: Packet) => {
         currentPlayer: game.players[game.currentPlayerIndex].id,
       });
     });
+
+    printServer('next move ' + game.players[game.currentPlayerIndex].name);
+  } else {
+    printResult('skip - other player turn');
   }
 };
 
@@ -257,12 +272,14 @@ const handleRandomAttack = (socket: WebSocket, request: Packet) => {
 
 const handleSinglePlay = (socket: WebSocket) => {
   const user = db.users.getUserByConnection(socket);
-  printServer('start single play for ' + user.name);
+  printServer('run bot for single play');
   startBot(user);
 };
 
 const process = (socket: WebSocket, message: RawData) => {
   const request = getRequest(message);
+
+  printCommand(request.type);
 
   if (request.type == 'reg') {
     return handleReg(socket, request);

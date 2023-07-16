@@ -32,6 +32,10 @@ export const printError = (message: string) => {
   console.log(color.error + '[error] ' + message + color.default);
 };
 
-export const print = (message: string) => {
-  console.log('[handler] ' + message);
+export const printCommand = (message: string) => {
+  console.log('  [command] ' + message);
+};
+
+export const printResult = (message: string) => {
+  console.log('    [result] ' + message);
 };

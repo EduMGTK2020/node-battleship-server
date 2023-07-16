@@ -5,22 +5,23 @@ import db from './db';
 import { getShips } from './ships';
 
 export const startBot = (user: User) => {
+  printBot('Start bot for ' + user.name);
   const client = new WebSocket('ws://localhost:3000');
 
   let userBotId = NoId;
 
   client.on('open', () => {
-    printBot('Start bot for ' + user.name);
     sendResponse(client, 'reg', {
       name: 'BOT for ' + user.name,
       password: 'BOT',
     });
+    printBot('login for bot');
   });
 
   client.on('message', (message: RawData) => {
     const request = getRequest(message);
 
-    printBot('Handle message - ' + request.type);
+    // printBot('Handle message - ' + request.type);
 
     if (request.type == 'reg') {
       const reqData = JSON.parse(request.data);
@@ -28,12 +29,17 @@ export const startBot = (user: User) => {
       userBotId = reqData.index;
 
       const gameId = db.games.createGame(user, userBot);
+
+      db.rooms.removePlayersRooms(userBot, user);
+
       [user, userBot].map((user) => {
         sendResponse(user.connection, 'create_game', {
           idGame: gameId,
           idPlayer: user.id,
         });
       });
+
+      printBot('create game with bot');
     }
     if (request.type == 'create_game') {
       const reqData = JSON.parse(request.data);
@@ -42,6 +48,7 @@ export const startBot = (user: User) => {
         ships: JSON.parse(getShips()),
         indexPlayer: reqData.idPlayer,
       });
+      printBot("add bot's ships");
     }
     if (request.type == 'turn') {
       const userBot = db.users.getUserById(userBotId);
@@ -52,6 +59,7 @@ export const startBot = (user: User) => {
             gameId: userBot.gameId,
             indexPlayer: userBot.id,
           });
+          printBot('random bot turn');
         }, 2000);
       }
     }

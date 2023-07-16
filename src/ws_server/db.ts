@@ -1,3 +1,4 @@
+import { printResult } from './helpers';
 import { User, Room, Game, NoId, AddShipsDataPacket, Ship } from './types';
 import { WebSocket } from 'ws';
 
@@ -82,6 +83,9 @@ const createRoom = (socket: WebSocket) => {
     user.roomId = nextRoomId;
     roomsData.push(newRoom);
     nextRoomId++;
+    printResult('room created by user ' + user.name);
+  } else {
+    printResult('user ' + user.name + ' already create room');
   }
 };
 
@@ -95,6 +99,20 @@ const removeRoomById = (id: number) => {
 
   const index = roomsData.findIndex((room) => room.id === id);
   roomsData.splice(index, 1);
+};
+
+const removePlayersRooms = (player1: User, player2: User) => {
+  const openRooms = getRoomsWithOnePlayer();
+  const roomIdToRemove: number[] = [];
+  openRooms.map((room) => {
+    const creator = room.users[0];
+    if (creator == player1 || creator == player2) {
+      roomIdToRemove.push(room.id);
+    }
+  });
+  roomIdToRemove.map((roomId) => {
+    removeRoomById(roomId);
+  });
 };
 
 const getWinners = () => {
@@ -240,7 +258,13 @@ export default {
     addUserWins,
     setAuthStatus,
   },
-  rooms: { createRoom, getRoomsWithOnePlayer, getRoomById, removeRoomById },
+  rooms: {
+    createRoom,
+    getRoomsWithOnePlayer,
+    getRoomById,
+    removeRoomById,
+    removePlayersRooms,
+  },
   games: {
     createGame,
     getGameById,
