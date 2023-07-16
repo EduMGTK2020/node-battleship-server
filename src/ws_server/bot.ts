@@ -21,8 +21,6 @@ export const startBot = (user: User) => {
   client.on('message', (message: RawData) => {
     const request = getRequest(message);
 
-    // printBot('Handle message - ' + request.type);
-
     if (request.type == 'reg') {
       const reqData = JSON.parse(request.data);
       const userBot = db.users.getUserById(reqData.index);

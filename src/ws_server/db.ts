@@ -10,6 +10,10 @@ const usersData: User[] = [];
 const roomsData: Room[] = [];
 const gamesData: Game[] = [];
 
+const getFirstPlayer = () => {
+  return Math.round(Math.random());
+};
+
 const getUserByName = (name: string) => {
   return usersData.find((user) => user.name === name) as User;
 };
@@ -129,7 +133,7 @@ const createGame = (player1: User, player2: User) => {
     id: gameId,
     players: [player1, player2],
     fields: new Map(),
-    currentPlayerIndex: 0,
+    currentPlayerIndex: getFirstPlayer(),
   } as Game;
   gamesData.push(newGame);
 
