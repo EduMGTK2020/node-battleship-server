@@ -252,8 +252,8 @@ const handleAttack = (socket: WebSocket, request: Packet) => {
 
 const handleRandomAttack = (socket: WebSocket, request: Packet) => {
   const reqData = JSON.parse(request.data);
-  reqData.x = Math.round(Math.random() * 10);
-  reqData.y = Math.round(Math.random() * 10);
+  reqData.x = Math.round(Math.random() * 9);
+  reqData.y = Math.round(Math.random() * 9);
   request.data = JSON.stringify(reqData);
   handleAttack(socket, request);
 };
